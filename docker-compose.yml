@@ -13,7 +13,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     networks:
-      - web
       - mysql_network
     expose:
       - "3306"
