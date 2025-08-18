@@ -9,18 +9,19 @@ services:
   mariadb:
     image: mariadb:10.11
     container_name: mariadb
-    restart: unless-stopped
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      # Pas de MYSQL_USER ici, on se connecte avec root pour le healthcheck
     networks:
-      - mysql_network
-    expose:
-      - "3306"
+      - mysql_network # IMPORTANT: sur un réseau privé
     healthcheck:
-      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./data/mariadb:/var/lib/mysql
 
   phpmyadmin:
     image: phpmyadmin
@@ -28,17 +29,18 @@ services:
     restart: always
     environment:
       PMA_HOST: mariadb
-      PMA_USER: ${MYSQL_USER}
-      PMA_PASSWORD: ${MYSQL_PASSWORD}
-      PMA_PORT: 3306
+      # Utilise le mot de passe root pour se connecter
+      PMA_USER: root
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.phpmyadmin.rule=Host(`pma.dev.local`)"
       - "traefik.http.routers.phpmyadmin.entrypoints=web"
       - "traefik.http.services.phpmyadmin.loadbalancer.server.port=80"
+      - "traefik.docker.network=web"
     depends_on:
       mariadb:
         condition: service_healthy
     networks:
-      - web
-      - mysql_network
+      - web # IMPORTANT: pour être accessible par Traefik
+      - mysql_network # IMPORTANT: pour accéder à MariaDB
