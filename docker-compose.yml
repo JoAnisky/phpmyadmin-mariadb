@@ -15,6 +15,8 @@ services:
       # Pas de MYSQL_USER ici, on se connecte avec root pour le healthcheck
     networks:
       - mysql_network # IMPORTANT: sur un réseau privé
+    ports:
+      - "33060:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -32,6 +34,7 @@ services:
       # Utilise le mot de passe root pour se connecter
       PMA_USER: root
       PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      PMA_PMADB: 'phpmyadmin_config'
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.phpmyadmin.rule=Host(`pma.dev.local`)"
